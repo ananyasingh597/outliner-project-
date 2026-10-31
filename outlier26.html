@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Folder Frenzy — Arcade File Organizer</title>
+  <style>
+    :root {
+      --bg-dark: #090a12;
+      --panel-bg: rgba(18, 22, 38, 0.88);
+      --border-glow: rgba(0, 240, 255, 0.25);
+      --cyan: #00f0ff;
+      --magenta: #ff007f;
+      --yellow: #ffe600;
+      --green: #00ff66;
+      --orange: #ff8800;
+      --text-main: #f0f4ff;
+      --text-muted: #8c9bb5;
+      --lane-docs: #00d2ff;
+      --lane-images: #ff00a0;
+      --lane-finance: #00ff73;
+      --lane-other: #ffaa00;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(ellipse at 50% 0%, rgba(255, 0, 127, 0.15) 0%, transparent 60%),
+        linear-gradient(rgba(0, 240, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 240, 255, 0.04) 1px, transparent 1px);
+      background-size: 100% 100%, 40px 40px, 40px 40px;
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    header {
+      background: rgba(10, 13, 24, 0.95);
+      border-bottom: 2px solid var(--border-glow);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+      padding: 12px 24px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      font-size: 28px;
+      filter: drop-shadow(0 0 8px var(--magenta));
+    }
+
+    .brand-title {
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, var(--cyan), var(--magenta));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 16px rgba(0, 240, 255, 0.3);
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .btn {
+      background: #181d33;
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      border-color: var(--cyan);
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .btn-real {
+      background: linear-gradient(135deg, #1b2845, #1d335a);
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+
+    .btn-undo {
+      border-color: rgba(255, 230, 0, 0.4);
+      color: var(--yellow);
+    }
+
+    .toggle-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #121626;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 6px 12px;
+      border-radius: 6px;
+    }
+
+    .toggle-group label {
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 36px;
+      height: 20px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #2c334d;
+      transition: .3s;
+      border-radius: 20px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--green);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(16px);
+    }
+
+    #practiceBanner {
+      display: none;
+      background: linear-gradient(90deg, #ff8800, #ff007f);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+      padding: 4px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      box-shadow: 0 2px 10px rgba(255, 136, 0, 0.4);
+    }
+
+    .app-container {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 280px 1fr 340px;
+      gap: 16px;
+      padding: 16px;
+      max-width: 1600px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    @media (max-width: 1100px) {
+      .app-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      background: var(--panel-bg);
+      border: 1px solid var(--border-glow);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(10px);
+    }
+
+    .panel-header {
+      background: rgba(14, 18, 32, 0.9);
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .panel-title {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--cyan);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge {
+      background: rgba(0, 240, 255, 0.15);
+      color: var(--cyan);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .file-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      max-height: calc(100vh - 200px);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .file-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 6px;
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .file-item.current {
+      background: rgba(0, 240, 255, 0.1);
+      border-color: var(--cyan);
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+      transform: scale(1.02);
+    }
+
+    .file-item-name {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-family: monospace;
+    }
+
+    .arena-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    .hud {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      padding: 14px 20px;
+      background: rgba(10, 13, 24, 0.8);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .hud-box {
+      text-align: center;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      padding: 6px;
+    }
+
+    .hud-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .hud-value {
+      font-size: 20px;
+      font-weight: 900;
+      font-family: 'Courier New', Courier, monospace;
+      color: #fff;
+    }
+
+    .hud-value.glow-cyan { color: var(--cyan); text-shadow: 0 0 10px var(--cyan); }
+    .hud-value.glow-magenta { color: var(--magenta); text-shadow: 0 0 10px var(--magenta); }
+    .hud-value.glow-yellow { color: var(--yellow); text-shadow: 0 0 10px var(--yellow); }
+    .hud-value.glow-green { color: var(--green); text-shadow: 0 0 10px var(--green); }
+
+    .ai-radar-bar {
+      width: 100%;
+      background: rgba(22, 16, 45, 0.85);
+      border-bottom: 2px solid var(--magenta);
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 2px 14px rgba(255, 0, 127, 0.2);
+    }
+
+    .ai-radar-title {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: var(--magenta);
+    }
+
+    .ai-radar-desc {
+      font-size: 13px;
+      color: #fff;
+      font-family: monospace;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .ai-radar-target {
+      color: var(--yellow);
+      font-weight: bold;
+    }
+
+    .ai-radar-confidence {
+      background: rgba(0, 255, 102, 0.15);
+      color: var(--green);
+      border: 1px solid var(--green);
+      padding: 2px 8px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .playfield-container {
+      width: 100%;
+      flex: 1;
+      min-height: 440px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: radial-gradient(circle at 50% 50%, rgba(20, 24, 45, 0.6) 0%, rgba(9, 10, 18, 0.95) 100%);
+    }
+
+    .crate {
+      position: absolute;
+      width: 180px;
+      height: 70px;
+      background: linear-gradient(145deg, #252b48, #181c33);
+      border: 2px solid var(--cyan);
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.5), inset 0 0 15px rgba(0, 240, 255, 0.2);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 6px 10px;
+      z-index: 50;
+      transition: left 0.1s ease-out;
+      pointer-events: none;
+    }
+
+    .crate-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--cyan);
+    }
+
+    .crate-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      font-family: monospace;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 160px;
+      margin-top: 2px;
+    }
+
+    .lanes-container {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      width: 100%;
+      height: 120px;
+      padding: 10px;
+      background: rgba(10, 13, 24, 0.95);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+    }
+
+    .lane {
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      position: relative;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .lane:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .lane.lane-0 { border-color: rgba(0, 210, 255, 0.3); }
+    .lane.lane-1 { border-color: rgba(255, 0, 160, 0.3); }
+    .lane.lane-2 { border-color: rgba(0, 255, 115, 0.3); }
+    .lane.lane-3 { border-color: rgba(255, 170, 0, 0.3); }
+
+    .lane.player-target {
+      border-width: 3px;
+      transform: translateY(-4px);
+    }
+
+    .lane.lane-0.player-target { border-color: var(--lane-docs); box-shadow: 0 0 20px var(--lane-docs); }
+    .lane.lane-1.player-target { border-color: var(--lane-images); box-shadow: 0 0 20px var(--lane-images); }
+    .lane.lane-2.player-target { border-color: var(--lane-finance); box-shadow: 0 0 20px var(--lane-finance); }
+    .lane.lane-3.player-target { border-color: var(--lane-other); box-shadow: 0 0 20px var(--lane-other); }
+
+    .lane.ai-recommended::before {
+      content: "★ AI PICK";
+      position: absolute;
+      top: -12px;
+      background: var(--yellow);
+      color: #000;
+      font-size: 9px;
+      font-weight: 900;
+      padding: 1px 6px;
+      border-radius: 4px;
+      letter-spacing: 1px;
+      box-shadow: 0 0 8px var(--yellow);
+      animation: pulse 1s infinite alternate;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      100% { transform: scale(1.05); opacity: 1; }
+    }
+
+    .lane-icon { font-size: 24px; }
+
+    .lane-title {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .lane.lane-0 .lane-title { color: var(--lane-docs); }
+    .lane.lane-1 .lane-title { color: var(--lane-images); }
+    .lane.lane-2 .lane-title { color: var(--lane-finance); }
+    .lane.lane-3 .lane-title { color: var(--lane-other); }
+
+    .lane-hint {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-family: monospace;
+    }
+
+    .controls-bar {
+      width: 100%;
+      background: rgba(14, 18, 32, 0.9);
+      padding: 10px 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .keycap {
+      background: #252b45;
+      color: #fff;
+      padding: 3px 7px;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      font-weight: bold;
+      font-family: monospace;
+      margin: 0 2px;
+    }
+
+    .mobile-controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    .folder-accordions {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .folder-group {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .folder-group-header {
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.04);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .folder-group-items {
+      max-height: 130px;
+      overflow-y: auto;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .folder-file-pill {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.04);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: monospace;
+    }
+
+    .audit-log {
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 10px 12px;
+      max-height: 120px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 11px;
+      background: rgba(0, 0, 0, 0.4);
+    }
+
+    .log-entry {
+      margin-bottom: 4px;
+      color: var(--text-muted);
+    }
+
+    .log-entry.success { color: var(--green); }
+    .log-entry.undo { color: var(--yellow); }
+    .log-entry.warn { color: var(--orange); }
+
+    .floating-text {
+      position: absolute;
+      font-weight: 900;
+      font-size: 18px;
+      pointer-events: none;
+      animation: floatUp 0.8s forwards ease-out;
+      z-index: 99;
+      font-family: monospace;
+    }
+
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-40px) scale(1.3); }
+    }
+
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-card {
+      background: #141829;
+      border: 2px solid var(--cyan);
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 480px;
+      width: 90%;
+      box-shadow: 0 0 30px rgba(0, 240, 255, 0.3);
+    }
+
+    .modal-card h2 {
+      color: var(--cyan);
+      font-size: 20px;
+      margin-bottom: 12px;
+    }
+
+    .modal-card p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="practiceBanner">🛡️ PRACTICE MODE ACTIVE — No files will be moved or modified on disk!</div>
+
+  <header>
+    <div class="brand">
+      <div class="brand-icon">⚡</div>
+      <div>
+        <div class="brand-title">Folder Frenzy</div>
+        <div class="brand-subtitle">Arcade File Sorter & Chore Engine</div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn" id="btnDemoMode" title="Load 100 simulated messy files">
+        🎮 Demo Mode
+      </button>
+
+      <button class="btn btn-real" id="btnRealMode" title="Pick an actual folder on your computer to organize">
+        📂 Pick Real Folder
+      </button>
+
+      <div class="toggle-group" title="When ON, simulates sorting without touching any files on your disk">
+        <label>
+          <span>Dry Run</span>
+          <div class="switch">
+            <input type="checkbox" id="dryRunToggle">
+            <span class="slider"></span>
+          </div>
+        </label>
+      </div>
+
+      <button class="btn btn-undo" id="btnUndoLast" title="Move the last sorted file back to root">
+        ↩ Undo Last
+      </button>
+
+      <button class="btn" id="btnUndoAll" title="Restore all sorted files back to root">
+        ⏪ Undo All
+      </button>
+
+      <button class="btn" id="btnAudioToggle">
+        🔊 Sound: ON
+      </button>
+    </div>
+  </header>
+
+  <main class="app-container">
+
+    <section class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span>📁 Messy Folder</span>
+          <span class="badge" id="sourceBadge">Demo (100)</span>
+        </div>
+        <div style="font-size: 11px; color: var(--text-muted);" id="queueCountLabel">100 remaining</div>
+      </div>
+      <div class="file-list" id="unorganizedList"></div>
+    </section>
+
+    <section class="panel arena-panel">
+      <div class="hud">
+        <div class="hud-box">
+          <div class="hud-label">Score</div>
+          <div class="hud-value glow-cyan" id="hudScore">0</div>
+        </div>
+        <div class="hud-box">
+          <div class="hud-label">Combo</div>
+          <div class="hud-value glow-magenta" id="hudCombo">x1</div>
+        </div>
+        <div class="hud-box">
+          <div class="hud-label">Files Sorted</div>
+          <div class="hud-value glow-yellow" id="hudProgress">0 / 100</div>
+        </div>
+        <div class="hud-box">
+          <div class="hud-label">Accuracy</div>
+          <div class="hud-value glow-green" id="hudAccuracy">100%</div>
+        </div>
+      </div>
+
+      <div class="ai-radar-bar">
+        <div class="ai-radar-title">🤖 AI RADAR</div>
+        <div class="ai-radar-desc" id="aiRadarDesc">Ready to start sorting...</div>
+        <div class="ai-radar-confidence" id="aiConfidenceBadge">--% MATCH</div>
+      </div>
+
+      <div class="playfield-container" id="playfield">
+        <div class="crate" id="activeCrate">
+          <div class="crate-header">
+            <span id="crateIcon">📄</span>
+            <span id="crateType">DOCUMENT</span>
+          </div>
+          <div class="crate-name" id="crateFileName">loading_file.pdf</div>
+        </div>
+
+        <div class="lanes-container">
+          <div class="lane lane-0 player-target" data-lane="0">
+            <div class="lane-icon">📄</div>
+            <div class="lane-title">Documents</div>
+            <div class="lane-hint">.pdf .docx .txt</div>
+          </div>
+          <div class="lane lane-1" data-lane="1">
+            <div class="lane-icon">🖼️</div>
+            <div class="lane-title">Images</div>
+            <div class="lane-hint">.png .jpg .svg</div>
+          </div>
+          <div class="lane lane-2" data-lane="2">
+            <div class="lane-icon">💰</div>
+            <div class="lane-title">Finance</div>
+            <div class="lane-hint">tax, invoice, bill</div>
+          </div>
+          <div class="lane lane-3" data-lane="3">
+            <div class="lane-icon">📦</div>
+            <div class="lane-title">Other</div>
+            <div class="lane-hint">.zip .mp3 misc</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls-bar">
+        <div>
+          <span>Controls: </span>
+          <span class="keycap">◀</span> <span class="keycap">▶</span> Move Lane &nbsp;|&nbsp;
+          <span class="keycap">▼</span> or <span class="keycap">SPACE</span> Fast Drop
+        </div>
+        <div class="mobile-controls">
+          <button class="btn" id="btnMoveLeft">◀ Left</button>
+          <button class="btn" id="btnDrop">▼ Drop</button>
+          <button class="btn" id="btnMoveRight">Right ▶</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span>✨ Organized Bins</span>
+          <span class="badge" id="sortedCountBadge">0 Sorted</span>
+        </div>
+        <div style="font-size: 11px; color: var(--text-muted);" id="folderModeLabel">Target: Subfolders</div>
+      </div>
+
+      <div class="folder-accordions">
+        <div class="folder-group">
+          <div class="folder-group-header" style="color: var(--lane-docs);">
+            <span>📄 Documents/</span>
+            <span class="badge" id="badgeDocs">0</span>
+          </div>
+          <div class="folder-group-items" id="binDocs"></div>
+        </div>
+
+        <div class="folder-group">
+          <div class="folder-group-header" style="color: var(--lane-images);">
+            <span>🖼️ Images/</span>
+            <span class="badge" id="badgeImages">0</span>
+          </div>
+          <div class="folder-group-items" id="binImages"></div>
+        </div>
+
+        <div class="folder-group">
+          <div class="folder-group-header" style="color: var(--lane-finance);">
+            <span>💰 Finance/</span>
+            <span class="badge" id="badgeFinance">0</span>
+          </div>
+          <div class="folder-group-items" id="binFinance"></div>
+        </div>
+
+        <div class="folder-group">
+          <div class="folder-group-header" style="color: var(--lane-other);">
+            <span>📦 Other/</span>
+            <span class="badge" id="badgeOther">0</span>
+          </div>
+          <div class="folder-group-items" id="binOther"></div>
+        </div>
+      </div>
+
+      <div class="audit-log" id="auditLog">
+        <div class="log-entry">⚡ System loaded. Ready for sorting.</div>
+      </div>
+    </section>
+
+  </main>
+
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal-card">
+      <h2 id="modalTitle">Confirm Action</h2>
+      <p id="modalMessage">Are you sure you want to proceed?</p>
+      <div class="modal-actions">
+        <button class="btn" id="modalCancel">Cancel</button>
+        <button class="btn btn-undo" id="modalConfirm">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    class RetroAudio {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            this.ctx = new AudioContext();
+          }
+        }
+      }
+
+      playTone(freq, type = 'sine', duration = 0.1, gainVal = 0.15) {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+          
+          gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start();
+          osc.stop(this.ctx.currentTime + duration);
+        } catch (e) {}
+      }
+
+      move() { this.playTone(320, 'square', 0.05, 0.05); }
+      drop() { this.playTone(180, 'triangle', 0.12, 0.2); }
+      success() {
+        this.playTone(523.25, 'triangle', 0.08, 0.15);
+        setTimeout(() => this.playTone(659.25, 'triangle', 0.12, 0.18), 70);
+        setTimeout(() => this.playTone(783.99, 'triangle', 0.2, 0.2), 140);
+      }
+      undo() {
+        this.playTone(600, 'sawtooth', 0.08, 0.1);
+        setTimeout(() => this.playTone(300, 'sawtooth', 0.15, 0.1), 80);
+      }
+      levelUp() {
+        this.playTone(440, 'square', 0.1, 0.2);
+        setTimeout(() => this.playTone(880, 'square', 0.25, 0.25), 100);
+      }
+    }
+
+    const sound = new RetroAudio();
+
+    const CATEGORIES = {
+      0: { name: 'Documents', folder: 'Documents', icon: '📄', color: 'var(--lane-docs)' },
+      1: { name: 'Images', folder: 'Images', icon: '🖼️', color: 'var(--lane-images)' },
+      2: { name: 'Finance', folder: 'Finance', icon: '💰', color: 'var(--lane-finance)' },
+      3: { name: 'Other', folder: 'Other', icon: '📦', color: 'var(--lane-other)' }
+    };
+
+    function predictCategory(fileName) {
+      const lower = fileName.toLowerCase();
+      const parts = lower.split('.');
+      const ext = parts.length > 1 ? parts.pop() : '';
+
+      const financeKeywords = [
+        'tax', 'invoice', 'receipt', 'statement', 'bill', 'payroll',
+        'expense', 'budget', 'salary', 'w2', '1099', 'payout', 'crypto',
+        'bank', 'loan', 'insurance', 'audit', 'dividend', 'stripe', 'paypal'
+      ];
+
+      for (const kw of financeKeywords) {
+        if (lower.includes(kw)) {
+          return {
+            lane: 2,
+            category: 'Finance',
+            reason: `Found financial keyword "${kw}"`,
+            confidence: 96 + Math.floor(Math.random() * 4)
+          };
+        }
+      }
+
+      const imgExts = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'bmp', 'ico', 'heic', 'tiff'];
+      if (imgExts.includes(ext) || lower.includes('photo') || lower.includes('screenshot') || lower.includes('avatar')) {
+        return {
+          lane: 1,
+          category: 'Images',
+          reason: `Detected image format (.${ext || 'img'})`,
+          confidence: 98
+        };
+      }
+
+      const docExts = ['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt', 'pages', 'md', 'pptx', 'ppt', 'xlsx', 'xls', 'csv'];
+      if (docExts.includes(ext) || lower.includes('resume') || lower.includes('contract') || lower.includes('report') || lower.includes('notes')) {
+        return {
+          lane: 0,
+          category: 'Documents',
+          reason: `Detected document format (.${ext || 'doc'})`,
+          confidence: 94
+        };
+      }
+
+      return {
+        lane: 3,
+        category: 'Other',
+        reason: `Archive, media, or misc extension (.${ext || 'misc'})`,
+        confidence: 90
+      };
+    }
+
+    function generateDemoFiles() {
+      return [
+        { name: "tax_return_2023_w2.pdf", size: "320 KB" },
+        { name: "invoice_freelance_nov2024.pdf", size: "145 KB" },
+        { name: "walmart_grocery_receipt_oct.png", size: "890 KB" },
+        { name: "bank_statement_chase_september.pdf", size: "210 KB" },
+        { name: "payroll_stub_october_final.pdf", size: "95 KB" },
+        { name: "uber_eats_receipt_lunch.png", size: "640 KB" },
+        { name: "stripe_payout_summary_q3.csv", size: "45 KB" },
+        { name: "home_mortgage_loan_agreement.pdf", size: "1.2 MB" },
+        { name: "car_insurance_renewal_geico.pdf", size: "380 KB" },
+        { name: "crypto_binance_tax_export_2023.csv", size: "88 KB" },
+        { name: "annual_household_budget_2024.xlsx", size: "112 KB" },
+        { name: "dentist_medical_bill_receipt.pdf", size: "190 KB" },
+        { name: "amazon_order_invoice_112-984.pdf", size: "175 KB" },
+        { name: "electric_utility_bill_august.pdf", size: "130 KB" },
+        { name: "gym_membership_receipt_annual.png", size: "420 KB" },
+        { name: "quarterly_expense_report_team.xlsx", size: "240 KB" },
+        { name: "freelance_contractor_1099_form.pdf", size: "310 KB" },
+        { name: "flight_ticket_receipt_hawaii.pdf", size: "290 KB" },
+        { name: "hotel_booking_receipt_receipt.pdf", size: "205 KB" },
+        { name: "software_subscription_receipt_adobe.png", size: "510 KB" },
+        { name: "credit_card_statement_july.pdf", size: "340 KB" },
+        { name: "investment_dividend_summary_fidelity.pdf", size: "410 KB" },
+        { name: "student_loan_tax_statement_1098.pdf", size: "150 KB" },
+        { name: "charity_donation_tax_receipt.pdf", size: "120 KB" },
+        { name: "apple_store_macbook_invoice.pdf", size: "210 KB" },
+        { name: "vacation_sunset_beach.jpg", size: "3.4 MB" },
+        { name: "screenshot_error_bug_report.png", size: "820 KB" },
+        { name: "profile_headshot_linkedin_2024.jpg", size: "1.8 MB" },
+        { name: "company_logo_vector_transparent.svg", size: "34 KB" },
+        { name: "cat_sleeping_couch_cute.png", size: "2.1 MB" },
+        { name: "family_thanksgiving_dinner.jpeg", size: "4.2 MB" },
+        { name: "website_wireframe_mockup.png", size: "1.5 MB" },
+        { name: "desktop_neon_wallpaper_4k.jpg", size: "5.6 MB" },
+        { name: "camera_hiking_mountain_view.jpg", size: "3.9 MB" },
+        { name: "app_icon_square_rounded.png", size: "110 KB" },
+        { name: "instagram_story_post_draft.png", size: "940 KB" },
+        { name: "dog_golden_retriever_park.jpeg", size: "3.1 MB" },
+        { name: "conference_badge_photo.png", size: "450 KB" },
+        { name: "art_illustration_cyberpunk_city.png", size: "4.8 MB" },
+        { name: "birthday_party_group_photo.jpg", size: "2.9 MB" },
+        { name: "screenshot_slack_chat_funny.png", size: "620 KB" },
+        { name: "food_ramen_bowl_dinner.jpg", size: "2.4 MB" },
+        { name: "coffee_latte_art_morning.jpg", size: "1.9 MB" },
+        { name: "diagram_system_architecture.svg", size: "85 KB" },
+        { name: "avatar_pixel_art_character.png", size: "65 KB" },
+        { name: "nature_forest_foggy_trail.jpg", size: "4.5 MB" },
+        { name: "screenshot_game_high_score.png", size: "780 KB" },
+        { name: "product_photo_sneakers_white.png", size: "2.3 MB" },
+        { name: "concert_lights_crowd_stage.jpg", size: "3.7 MB" },
+        { name: "kitchen_remodel_interior_design.jpg", size: "3.2 MB" },
+        { name: "resume_ananya_software_eng_2024.docx", size: "68 KB" },
+        { name: "project_proposal_client_final.pdf", size: "540 KB" },
+        { name: "weekly_team_meeting_notes.txt", size: "14 KB" },
+        { name: "master_thesis_draft_chapter3.docx", size: "1.1 MB" },
+        { name: "hackathon_pitch_deck_slides.pptx", size: "8.4 MB" },
+        { name: "employment_contract_signed.pdf", size: "620 KB" },
+        { name: "product_specification_v2.docx", size: "230 KB" },
+        { name: "non_disclosure_agreement_nda.pdf", size: "310 KB" },
+        { name: "book_notes_atomic_habits.md", size: "28 KB" },
+        { name: "recipe_grandmas_secret_pasta.txt", size: "8 KB" },
+        { name: "user_research_interviews_summary.pdf", size: "450 KB" },
+        { name: "apartment_lease_agreement_2024.pdf", size: "1.4 MB" },
+        { name: "press_release_product_launch.docx", size: "85 KB" },
+        { name: "cover_letter_google_application.docx", size: "55 KB" },
+        { name: "college_transcript_certified.pdf", size: "420 KB" },
+        { name: "board_meeting_agenda_november.pdf", size: "180 KB" },
+        { name: "privacy_policy_compliance_draft.pdf", size: "390 KB" },
+        { name: "lecture_notes_machine_learning.pdf", size: "2.1 MB" },
+        { name: "user_manual_dslr_camera.pdf", size: "4.6 MB" },
+        { name: "patent_application_claims.docx", size: "195 KB" },
+        { name: "terms_of_service_updated.txt", size: "42 KB" },
+        { name: "medical_records_immunization.pdf", size: "280 KB" },
+        { name: "recommendation_letter_professor.pdf", size: "160 KB" },
+        { name: "event_schedule_conference_speakers.pdf", size: "310 KB" },
+        { name: "todo_list_weekend_errands.txt", size: "5 KB" },
+        { name: "backup_photos_archive_2022.zip", size: "420 MB" },
+        { name: "spotify_music_installer.exe", size: "84 MB" },
+        { name: "podcast_interview_episode_42.mp3", size: "48 MB" },
+        { name: "synthwave_retro_track_demo.wav", size: "32 MB" },
+        { name: "ubuntu_linux_server_lts.iso", size: "1.8 GB" },
+        { name: "video_screen_recording_bug.mp4", size: "115 MB" },
+        { name: "game_emulator_save_state.bin", size: "16 MB" },
+        { name: "figma_design_assets_bundle.zip", size: "64 MB" },
+        { name: "blender_3d_render_project.blend", size: "140 MB" },
+        { name: "font_arcade_classic_retro.ttf", size: "180 KB" },
+        { name: "vlc_media_player_installer.dmg", size: "52 MB" },
+        { name: "audio_voice_memo_meeting.m4a", size: "12 MB" },
+        { name: "minecraft_world_save_backup.zip", size: "78 MB" },
+        { name: "docker_database_dump_dump.sql", size: "25 MB" },
+        { name: "firmware_mechanical_keyboard.bin", size: "4 MB" },
+        { name: "python_web_scraper_script.py", size: "18 KB" },
+        { name: "video_drone_landscape_footage.mov", size: "280 MB" },
+        { name: "steam_game_mod_pack.rar", size: "95 MB" },
+        { name: "presentation_video_export.mp4", size: "65 MB" },
+        { name: "virtualbox_guest_additions.iso", size: "58 MB" },
+        { name: "custom_icon_theme_pack.zip", size: "22 MB" },
+        { name: "guitar_acoustic_sample_loop.aif", size: "15 MB" },
+        { name: "3d_printer_model_gcode.gcode", size: "8 MB" },
+        { name: "arduino_sensor_controller.hex", size: "2 MB" },
+        { name: "unity_project_export_assets.unitypackage", size: "110 MB" }
+      ];
+    }
+
+    const state = {
+      mode: 'demo',
+      isDryRun: false,
+      isSoundOn: true,
+      realRootDirHandle: null,
+      unorganizedFiles: [],
+      sortedFiles: { 0: [], 1: [], 2: [], 3: [] },
+      history: [],
+      currentFile: null,
+      currentLane: 0,
+      aiSuggestedLane: 0,
+      crateY: 0,
+      fallSpeed: 1.2,
+      isFalling: false,
+      animationFrameId: null,
+      score: 0,
+      combo: 1,
+      totalInitialFiles: 100,
+      totalSorted: 0,
+      correctMoves: 0,
+      totalMoves: 0
+    };
+
+    const el = {
+      btnDemoMode: document.getElementById('btnDemoMode'),
+      btnRealMode: document.getElementById('btnRealMode'),
+      dryRunToggle: document.getElementById('dryRunToggle'),
+      practiceBanner: document.getElementById('practiceBanner'),
+      btnUndoLast: document.getElementById('btnUndoLast'),
+      btnUndoAll: document.getElementById('btnUndoAll'),
+      btnAudioToggle: document.getElementById('btnAudioToggle'),
+      sourceBadge: document.getElementById('sourceBadge'),
+      queueCountLabel: document.getElementById('queueCountLabel'),
+      unorganizedList: document.getElementById('unorganizedList'),
+      hudScore: document.getElementById('hudScore'),
+      hudCombo: document.getElementById('hudCombo'),
+      hudProgress: document.getElementById('hudProgress'),
+      hudAccuracy: document.getElementById('hudAccuracy'),
+      aiRadarDesc: document.getElementById('aiRadarDesc'),
+      aiConfidenceBadge: document.getElementById('aiConfidenceBadge'),
+      playfield: document.getElementById('playfield'),
+      activeCrate: document.getElementById('activeCrate'),
+      crateIcon: document.getElementById('crateIcon'),
+      crateType: document.getElementById('crateType'),
+      crateFileName: document.getElementById('crateFileName'),
+      lanes: document.querySelectorAll('.lane'),
+      btnMoveLeft: document.getElementById('btnMoveLeft'),
+      btnDrop: document.getElementById('btnDrop'),
+      btnMoveRight: document.getElementById('btnMoveRight'),
+      sortedCountBadge: document.getElementById('sortedCountBadge'),
+      folderModeLabel: document.getElementById('folderModeLabel'),
+      binDocs: document.getElementById('binDocs'),
+      binImages: document.getElementById('binImages'),
+      binFinance: document.getElementById('binFinance'),
+      binOther: document.getElementById('binOther'),
+      badgeDocs: document.getElementById('badgeDocs'),
+      badgeImages: document.getElementById('badgeImages'),
+      badgeFinance: document.getElementById('badgeFinance'),
+      badgeOther: document.getElementById('badgeOther'),
+      auditLog: document.getElementById('auditLog'),
+      modalBackdrop: document.getElementById('modalBackdrop'),
+      modalTitle: document.getElementById('modalTitle'),
+      modalMessage: document.getElementById('modalMessage'),
+      modalCancel: document.getElementById('modalCancel'),
+      modalConfirm: document.getElementById('modalConfirm')
+    };
+
+    function logAudit(message, type = '') {
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      const time = new Date().toLocaleTimeString().split(' ')[0];
+      entry.textContent = `[${time}] ${message}`;
+      el.auditLog.prepend(entry);
+    }
+
+    function initGame(mode = 'demo', files = null) {
+      state.mode = mode;
+      state.unorganizedFiles = files || generateDemoFiles();
+      state.totalInitialFiles = state.unorganizedFiles.length;
+      state.totalSorted = 0;
+      state.score = 0;
+      state.combo = 1;
+      state.correctMoves = 0;
+      state.totalMoves = 0;
+      state.history = [];
+      state.sortedFiles = { 0: [], 1: [], 2: [], 3: [] };
+
+      el.sourceBadge.textContent = mode === 'demo' ? `Demo (${state.totalInitialFiles})` : `Real Folder (${state.totalInitialFiles})`;
+      el.folderModeLabel.textContent = mode === 'demo' ? 'Target: Virtual Bins' : 'Target: Real Subfolders';
+
+      renderQueueList();
+      renderSortedBins();
+      updateHUD();
+
+      logAudit(`Initialized ${mode.toUpperCase()} mode with ${state.totalInitialFiles} files.`);
+      spawnNextCrate();
+    }
+
+    function spawnNextCrate() {
+      if (state.unorganizedFiles.length === 0) {
+        endGameVictory();
+        return;
+      }
+
+      state.currentFile = state.unorganizedFiles[0];
+      renderQueueList();
+
+      const prediction = predictCategory(state.currentFile.name);
+      state.aiSuggestedLane = prediction.lane;
+
+      el.aiRadarDesc.innerHTML = `File: <strong style="color:#fff;">${state.currentFile.name}</strong> &rarr; Predicts <span class="ai-radar-target">[${prediction.category}]</span> (${prediction.reason})`;
+      el.aiConfidenceBadge.textContent = `${prediction.confidence}% MATCH`;
+
+      el.lanes.forEach((laneEl, idx) => {
+        if (idx === prediction.lane) {
+          laneEl.classList.add('ai-recommended');
+        } else {
+          laneEl.classList.remove('ai-recommended');
+        }
+      });
+
+      state.currentLane = prediction.lane;
+      updatePlayerTargetLane();
+
+      el.crateIcon.textContent = CATEGORIES[prediction.lane].icon;
+      el.crateType.textContent = prediction.category;
+      el.crateType.style.color = CATEGORIES[prediction.lane].color;
+      el.crateFileName.textContent = state.currentFile.name;
+      el.activeCrate.style.borderColor = CATEGORIES[prediction.lane].color;
+
+      state.crateY = 0;
+      state.isFalling = true;
+      alignCrateToLane(state.currentLane);
+
+      cancelAnimationFrame(state.animationFrameId);
+      startFallingLoop();
+    }
+
+    function alignCrateToLane(laneIndex) {
+      const playfieldWidth = el.playfield.clientWidth;
+      const laneWidth = playfieldWidth / 4;
+      const crateWidth = 180;
+      const targetX = (laneIndex * laneWidth) + (laneWidth / 2) - (crateWidth / 2);
+      el.activeCrate.style.left = `${Math.max(10, targetX)}px`;
+    }
+
+    function updatePlayerTargetLane() {
+      el.lanes.forEach((laneEl, idx) => {
+        if (idx === state.currentLane) {
+          laneEl.classList.add('player-target');
+        } else {
+          laneEl.classList.remove('player-target');
+        }
+      });
+      alignCrateToLane(state.currentLane);
+    }
+
+    function startFallingLoop() {
+      function step() {
+        if (!state.isFalling) return;
+
+        state.crateY += state.fallSpeed;
+        const maxDrop = el.playfield.clientHeight - 190;
+
+        if (state.crateY >= maxDrop) {
+          executeDrop();
+          return;
+        }
+
+        el.activeCrate.style.top = `${state.crateY}px`;
+        state.animationFrameId = requestAnimationFrame(step);
+      }
+      state.animationFrameId = requestAnimationFrame(step);
+    }
+
+    function moveLane(direction) {
+      if (!state.isFalling) return;
+      const nextLane = state.currentLane + direction;
+      if (nextLane >= 0 && nextLane <= 3) {
+        state.currentLane = nextLane;
+        updatePlayerTargetLane();
+        sound.move();
+      }
+    }
+
+    async function executeDrop() {
+      if (!state.isFalling) return;
+      state.isFalling = false;
+      cancelAnimationFrame(state.animationFrameId);
+
+      sound.drop();
+
+      const droppedFile = state.unorganizedFiles.shift();
+      const targetLane = state.currentLane;
+      const isCorrect = (targetLane === state.aiSuggestedLane);
+
+      state.totalMoves++;
+      if (isCorrect) {
+        state.correctMoves++;
+        state.combo++;
+        const points = 100 * state.combo;
+        state.score += points;
+        sound.success();
+        showScorePopup(`+${points} COMBO x${state.combo}!`, '#00ff66');
+      } else {
+        state.combo = 1;
+        state.score += 40;
+        showScorePopup(`+40 (Manual)`, '#ffe600');
+      }
+
+      state.totalSorted++;
+      state.sortedFiles[targetLane].push(droppedFile);
+
+      const historyItem = {
+        file: droppedFile,
+        targetLane: targetLane,
+        isCorrect: isCorrect
+      };
+
+      if (state.mode === 'real') {
+        if (state.isDryRun) {
+          logAudit(`[DRY RUN] Pretended to move "${droppedFile.name}" &rarr; /${CATEGORIES[targetLane].folder}/`, 'warn');
+        } else {
+          try {
+            await moveRealFile(droppedFile, CATEGORIES[targetLane].folder, historyItem);
+            logAudit(`Moved "${droppedFile.name}" &rarr; /${CATEGORIES[targetLane].folder}/`, 'success');
+          } catch (err) {
+            logAudit(`Error moving "${droppedFile.name}": ${err.message}`, 'warn');
+          }
+        }
+      } else {
+        logAudit(`Sorted "${droppedFile.name}" into [${CATEGORIES[targetLane].name}]`, isCorrect ? 'success' : '');
+      }
+
+      state.history.push(historyItem);
+
+      renderQueueList();
+      renderSortedBins();
+      updateHUD();
+
+      setTimeout(() => {
+        spawnNextCrate();
+      }, 250);
+    }
+
+    function showScorePopup(text, color) {
+      const popup = document.createElement('div');
+      popup.className = 'floating-text';
+      popup.textContent = text;
+      popup.style.color = color;
+      popup.style.left = `${parseFloat(el.activeCrate.style.left) + 20}px`;
+      popup.style.top = `${state.crateY + 20}px`;
+      el.playfield.appendChild(popup);
+
+      setTimeout(() => {
+        popup.remove();
+      }, 800);
+    }
+
+    function updateHUD() {
+      el.hudScore.textContent = state.score.toLocaleString();
+      el.hudCombo.textContent = `x${state.combo}`;
+      el.hudProgress.textContent = `${state.totalSorted} / ${state.totalInitialFiles}`;
+      
+      const acc = state.totalMoves > 0 ? Math.round((state.correctMoves / state.totalMoves) * 100) : 100;
+      el.hudAccuracy.textContent = `${acc}%`;
+
+      el.queueCountLabel.textContent = `${state.unorganizedFiles.length} remaining`;
+      el.sortedCountBadge.textContent = `${state.totalSorted} Sorted`;
+    }
+
+    function renderQueueList() {
+      el.unorganizedList.innerHTML = '';
+      if (state.unorganizedFiles.length === 0) {
+        el.unorganizedList.innerHTML = '<div style="color:var(--green); text-align:center; padding:20px; font-weight:bold;">🎉 All files organized!</div>';
+        return;
+      }
+
+      state.unorganizedFiles.slice(0, 30).forEach((file, idx) => {
+        const item = document.createElement('div');
+        item.className = `file-item ${idx === 0 ? 'current' : ''}`;
+        const pred = predictCategory(file.name);
+        item.innerHTML = `
+          <div style="font-size:16px;">${CATEGORIES[pred.lane].icon}</div>
+          <div class="file-item-name">${file.name}</div>
+          <div style="font-size:10px; color:var(--text-muted);">${file.size || ''}</div>
+        `;
+        el.unorganizedList.appendChild(item);
+      });
+
+      if (state.unorganizedFiles.length > 30) {
+        const more = document.createElement('div');
+        more.style.textAlign = 'center';
+        more.style.fontSize = '11px';
+        more.style.color = 'var(--text-muted)';
+        more.style.padding = '8px';
+        more.textContent = `+ ${state.unorganizedFiles.length - 30} more files in queue`;
+        el.unorganizedList.appendChild(more);
+      }
+    }
+
+    function renderSortedBins() {
+      const bins = [
+        { el: el.binDocs, badge: el.badgeDocs, list: state.sortedFiles[0] },
+        { el: el.binImages, badge: el.badgeImages, list: state.sortedFiles[1] },
+        { el: el.binFinance, badge: el.badgeFinance, list: state.sortedFiles[2] },
+        { el: el.binOther, badge: el.badgeOther, list: state.sortedFiles[3] }
+      ];
+
+      bins.forEach(b => {
+        b.badge.textContent = b.list.length;
+        b.el.innerHTML = '';
+        if (b.list.length === 0) {
+          b.el.innerHTML = '<div style="font-size:10px; color:var(--text-muted); padding:4px;">(Empty)</div>';
+        } else {
+          b.list.slice().reverse().forEach(file => {
+            const pill = document.createElement('div');
+            pill.className = 'folder-file-pill';
+            pill.innerHTML = `<span>${file.name}</span> <span style="color:var(--text-muted); font-size:9px;">${file.size || 'Done'}</span>`;
+            b.el.appendChild(pill);
+          });
+        }
+      });
+    }
+
+    function endGameVictory() {
+      state.isFalling = false;
+      cancelAnimationFrame(state.animationFrameId);
+      sound.levelUp();
+      logAudit(`🎉 VICTORY! Organized all ${state.totalSorted} files with a final score of ${state.score}!`, 'success');
+      alert(`🏆 GAME COMPLETE!\n\nYou organized all ${state.totalSorted} files!\nFinal Score: ${state.score.toLocaleString()}\nAccuracy: ${el.hudAccuracy.textContent}\n\nDigital chore successfully executed!`);
+    }
+
+    async function pickRealFolder() {
+      if (!window.showDirectoryPicker) {
+        alert("The File System Access API is not supported in this browser.\n\nPlease open this file in Google Chrome or Microsoft Edge to use Real Mode.");
+        return;
+      }
+
+      try {
+        const dirHandle = await window.showDirectoryPicker({
+          id: 'folder-frenzy-source',
+          mode: 'readwrite'
+        });
+
+        state.realRootDirHandle = dirHandle;
+        const realFiles = [];
+
+        for await (const entry of dirHandle.values()) {
+          if (entry.kind === 'file') {
+            if (entry.name.startsWith('.') || entry.name.toLowerCase() === 'thumbs.db') continue;
+
+            const fileObj = await entry.getFile();
+            realFiles.push({
+              name: entry.name,
+              size: formatBytes(fileObj.size),
+              handle: entry
+            });
+          }
+        }
+
+        if (realFiles.length === 0) {
+          alert(`Selected folder "${dirHandle.name}" has 0 root files to organize.\n(Any existing subfolders like /Documents or /Images are left untouched).`);
+          return;
+        }
+
+        initGame('real', realFiles);
+        logAudit(`Connected real folder: "${dirHandle.name}" (${realFiles.length} files found).`, 'success');
+
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error("Directory picker error:", err);
+          alert(`Could not open folder: ${err.message}\n\nNote: If you opened this via file:// and Chrome blocks direct file write, you can test anytime using Demo Mode!`);
+        }
+      }
+    }
+
+    async function moveRealFile(fileItem, targetFolderName, historyItem) {
+      if (!state.realRootDirHandle || !fileItem.handle) return;
+
+      const root = state.realRootDirHandle;
+      const targetDirHandle = await root.getDirectoryHandle(targetFolderName, { create: true });
+      historyItem.targetDirHandle = targetDirHandle;
+
+      if (typeof fileItem.handle.move === 'function') {
+        await fileItem.handle.move(targetDirHandle);
+      } else {
+        const sourceFile = await fileItem.handle.getFile();
+        const newFileHandle = await targetDirHandle.getFileHandle(sourceFile.name, { create: true });
+        const writable = await newFileHandle.createWritable();
+        await writable.write(sourceFile);
+        await writable.close();
+        
+        await root.removeEntry(sourceFile.name);
+        historyItem.copiedFileHandle = newFileHandle;
+      }
+    }
+
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    async function undoLast() {
+      if (state.history.length === 0) {
+        alert("Nothing to undo!");
+        return;
+      }
+
+      const lastMove = state.history.pop();
+      const { file, targetLane, isCorrect } = lastMove;
+
+      const binList = state.sortedFiles[targetLane];
+      const idx = binList.indexOf(file);
+      if (idx !== -1) binList.splice(idx, 1);
+
+      state.unorganizedFiles.unshift(file);
+      state.totalSorted--;
+      state.totalMoves--;
+      if (isCorrect) {
+        state.correctMoves--;
+        state.score = Math.max(0, state.score - (100 * state.combo));
+        state.combo = Math.max(1, state.combo - 1);
+      } else {
+        state.score = Math.max(0, state.score - 40);
+      }
+
+      if (state.mode === 'real' && !state.isDryRun && state.realRootDirHandle) {
+        try {
+          const root = state.realRootDirHandle;
+          const targetDir = lastMove.targetDirHandle || await root.getDirectoryHandle(CATEGORIES[targetLane].folder);
+          
+          const movedFileHandle = await targetDir.getFileHandle(file.name);
+          if (typeof movedFileHandle.move === 'function') {
+            await movedFileHandle.move(root);
+          } else {
+            const movedFile = await movedFileHandle.getFile();
+            const restoredHandle = await root.getFileHandle(movedFile.name, { create: true });
+            const writable = await restoredHandle.createWritable();
+            await writable.write(movedFile);
+            await writable.close();
+            await targetDir.removeEntry(movedFile.name);
+          }
+          logAudit(`Undid move: Restored "${file.name}" back to root folder`, 'undo');
+        } catch (e) {
+          logAudit(`Undo warning for "${file.name}": ${e.message}`, 'warn');
+        }
+      } else {
+        logAudit(`Undid move for "${file.name}"`, 'undo');
+      }
+
+      sound.undo();
+      renderQueueList();
+      renderSortedBins();
+      updateHUD();
+
+      spawnNextCrate();
+    }
+
+    function confirmUndoAll() {
+      if (state.history.length === 0) {
+        alert("No moves to undo!");
+        return;
+      }
+
+      openModal(
+        "Undo All Moves?",
+        `This will restore all ${state.history.length} organized files back into the main queue and root folder.`,
+        async () => {
+          while (state.history.length > 0) {
+            await undoLast();
+          }
+          logAudit("All moves successfully restored to original state.", 'undo');
+        }
+      );
+    }
+
+    function openModal(title, msg, onConfirm) {
+      el.modalTitle.textContent = title;
+      el.modalMessage.textContent = msg;
+      el.modalBackdrop.style.display = 'flex';
+
+      const cleanup = () => {
+        el.modalBackdrop.style.display = 'none';
+        el.modalConfirm.onclick = null;
+        el.modalCancel.onclick = null;
+      };
+
+      el.modalCancel.onclick = cleanup;
+      el.modalConfirm.onclick = async () => {
+        cleanup();
+        await onConfirm();
+      };
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (el.modalBackdrop.style.display === 'flex') return;
+
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+        e.preventDefault();
+        moveLane(-1);
+      } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+        e.preventDefault();
+        moveLane(1);
+      } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S' || e.key === ' ') {
+        e.preventDefault();
+        executeDrop();
+      } else if (e.key === 'u' || e.key === 'U') {
+        e.preventDefault();
+        undoLast();
+      }
+    });
+
+    el.btnMoveLeft.addEventListener('click', () => moveLane(-1));
+    el.btnMoveRight.addEventListener('click', () => moveLane(1));
+    el.btnDrop.addEventListener('click', () => executeDrop());
+
+    el.lanes.forEach((laneEl) => {
+      laneEl.addEventListener('click', () => {
+        const targetIdx = parseInt(laneEl.dataset.lane, 10);
+        state.currentLane = targetIdx;
+        updatePlayerTargetLane();
+        executeDrop();
+      });
+    });
+
+    el.btnDemoMode.addEventListener('click', () => {
+      initGame('demo');
+    });
+
+    el.btnRealMode.addEventListener('click', () => {
+      pickRealFolder();
+    });
+
+    el.dryRunToggle.addEventListener('change', (e) => {
+      state.isDryRun = e.target.checked;
+      el.practiceBanner.style.display = state.isDryRun ? 'block' : 'none';
+      logAudit(`Dry Run Practice Mode: ${state.isDryRun ? 'ENABLED (Safe)' : 'DISABLED (Real Writes)'}`, state.isDryRun ? 'warn' : '');
+    });
+
+    el.btnUndoLast.addEventListener('click', undoLast);
+    el.btnUndoAll.addEventListener('click', confirmUndoAll);
+
+    el.btnAudioToggle.addEventListener('click', () => {
+      state.isSoundOn = !state.isSoundOn;
+      sound.enabled = state.isSoundOn;
+      el.btnAudioToggle.textContent = state.isSoundOn ? '🔊 Sound: ON' : '🔇 Sound: OFF';
+    });
+
+    window.addEventListener('resize', () => {
+      if (state.isFalling) {
+        alignCrateToLane(state.currentLane);
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initGame('demo');
+    });
+  </script>
+</body>
+</html>
